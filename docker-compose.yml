@@ -1,0 +1,81 @@
+services:
+  vllm-server:
+    image: vllm-node   # construit via spark-vllm-docker/build-and-copy.sh
+    container_name: vllm_node
+    restart: unless-stopped
+    network_mode: host
+    ipc: host
+    privileged: true
+    runtime: nvidia
+
+    volumes:
+      - /home/mak/ai-models:/root/.cache/huggingface
+      - /home/mak/.cache/vllm:/root/.cache/vllm
+      - /home/mak/.cache/flashinfer:/root/.cache/flashinfer
+      - /home/mak/.triton:/root/.triton
+      # mods spark-vllm-docker (patches vLLM + chat template)
+      - /home/mak/workspace/spark-vllm-docker/mods/fix-qwen3.5-chat-template:/workspace/mods/fix-qwen3.5-chat-template:ro
+
+    environment:
+      - NCCL_IGNORE_CPU_AFFINITY=1
+      - VLLM_MARLIN_USE_ATOMIC_ADD=1
+
+    command:
+      - bash
+      - -i
+      - -c
+      - |
+        set -e
+
+        # --- Appliquer les mods spark-vllm-docker ---
+        echo "[mod] fix-qwen3.5-chat-template"
+        cd /workspace/mods/fix-qwen3.5-chat-template
+        WORKSPACE_DIR=/workspace bash run.sh
+
+        # --- Lancer vLLM ---
+        exec vllm serve Qwen/Qwen3.5-35B-A3B-FP8 \
+          --host 0.0.0.0 \
+          --port 8000 \
+          --max-model-len 131072 \
+          --gpu-memory-utilization 0.85 \
+          --max-num-batched-tokens 16384 \
+          --kv-cache-dtype fp8 \
+          --load-format fastsafetensors \
+          --attention-backend flashinfer \
+          --enable-prefix-caching \
+          --enable-auto-tool-choice \
+          --tool-call-parser qwen3_coder \
+          --reasoning-parser qwen3 \
+          --chat-template /workspace/unsloth.jinja \
+          --served-model-name qwen3.5 \
+          --uvicorn-log-level warning
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 600s
+
+    cgroup: host   # Ubuntu 24.04 : nsdelegate sur cgroupv2
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - OPENAI_API_BASE_URLS=http://host.docker.internal:8000/v1
+      - OPENAI_API_KEYS=sk-dummy
+      - ENABLE_API_KEYS=true
+      - USER_PERMISSIONS_FEATURES_API_KEYS=true
+    depends_on:
+      - vllm-server
+
+volumes:
+  open-webui:
