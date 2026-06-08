@@ -9,6 +9,9 @@ services:
     container_name: qwen36-vllm
     restart: unless-stopped
 
+    networks:
+      - hermes-net
+
     environment:
       - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
       - NVIDIA_VISIBLE_DEVICES=all
@@ -44,8 +47,8 @@ services:
       --port 8000
       --max-model-len 131072
       --max-num-batched-tokens 32768
-      --gpu-memory-utilization 0.87
-      --max-num-seqs 16
+      --gpu-memory-utilization 0.90
+      --max-num-seqs 32
       --kv-cache-dtype fp8_e4m3
       --attention-backend flashinfer
       --moe-backend flashinfer_cutlass
@@ -56,8 +59,8 @@ services:
       --enable-auto-tool-choice
       --tool-call-parser qwen3_coder
       --chat-template /workspace/unsloth.jinja
-      --speculative-config '{"method": "mtp", "num_speculative_tokens": 5}'
-      --max-cudagraph-capture-size 512
+      --speculative-config '{"method": "mtp", "num_speculative_tokens": 7}'
+      --max-cudagraph-capture-size 1024
       --trust-remote-code
 
     healthcheck:
@@ -65,7 +68,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 180s
 
     deploy:
       resources:
@@ -78,8 +81,12 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
-        max-file: "3"
+        max-size: "100m"
+        max-file: "5"
+
+networks:
+  hermes-net:
+    driver: bridge
 
 volumes:
   vllm-logs:
