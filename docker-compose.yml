@@ -9,9 +9,6 @@ services:
     container_name: qwen36-vllm
     restart: unless-stopped
 
-    networks:
-      - hermes-net
-
     environment:
       - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
       - NVIDIA_VISIBLE_DEVICES=all
