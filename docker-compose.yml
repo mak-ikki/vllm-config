@@ -45,7 +45,7 @@ services:
       Qwen/Qwen3.8-27B-FP8
       --host 0.0.0.0
       --port 8000
-      --max-model-len 131072
+      --max-model-len 262144
       --max-num-batched-tokens 32768
       --gpu-memory-utilization 0.82
       --max-num-seqs 32
@@ -58,7 +58,7 @@ services:
       --enable-auto-tool-choice
       --tool-call-parser qwen3_coder
       --chat-template /workspace/unsloth.jinja
-      --speculative-config '{"method": "mtp", "num_speculative_tokens": 3}'
+      --speculative-config '{"method": "mtp", "num_speculative_tokens": 2}'
       --max-cudagraph-capture-size 1024
       --trust-remote-code
 
