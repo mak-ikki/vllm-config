@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply DGX Spark GB10 thermal limits before vLLM
+After=nv-docker-gpus.service
+Before=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/home/mak/ai/vllm-config/setup-thermal.sh
+
+[Install]
+WantedBy=multi-user.target
