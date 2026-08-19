@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: ikki-spark-vllm
-    container_name: qwen38-vllm
+    container_name: qwen36-35b-vllm
     restart: unless-stopped
 
     networks:
@@ -41,8 +41,16 @@ services:
         soft: 67108864
         hard: 67108864
 
+    # unsloth/Qwen3.6-35B-A3B n'est publie qu'en BF16 (35B total / 3B actifs, 256
+    # experts). --quantization fp8 quantifie les poids a la volee au chargement
+    # (pas de calibration requise, supporte des compute capability 8.9+, donc OK
+    # sur GB10/Blackwell) pour ramener l'empreinte memoire a un niveau proche du
+    # precedent checkpoint FP8 natif.
+    # --attention-backend n'est plus force: l'architecture hybride Gated DeltaNet
+    # + Gated Attention a besoin du dispatch par couche que vLLM choisit lui-meme;
+    # forcer triton_attn (pense pour de l'attention classique) n'est pas valide ici.
     command: >
-      Qwen/Qwen3.8-27B-FP8
+      unsloth/Qwen3.6-35B-A3B
       --host 0.0.0.0
       --port 8000
       --max-model-len 262144
@@ -50,7 +58,7 @@ services:
       --gpu-memory-utilization 0.82
       --max-num-seqs 32
       --kv-cache-dtype fp8_e4m3
-      --attention-backend triton_attn
+      --quantization fp8
       --enable-chunked-prefill
       --enable-prefix-caching
       --language-model-only

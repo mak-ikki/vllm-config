@@ -2,8 +2,10 @@
 # Base officielle NVIDIA avec optimisations Blackwell natives
 FROM vllm/vllm-openai:v0.27.1-aarch64
 
-# Qwen3.8 nécessite transformers >= 5.3.0 (hybrid attention; servi en --language-model-only pour l'instant)
-RUN pip install -U "transformers>=5.3.0" "huggingface_hub>=0.27.0" --quiet
+# Qwen3.6-35B-A3B (hybrid Gated DeltaNet + Gated Attention + MoE) necessite
+# transformers recent avec les extras serving; servi en --language-model-only
+RUN pip install -U "transformers[serving]>=5.3.0" "huggingface_hub>=0.27.0" --quiet
 
-# Chat template unsloth pour Qwen3.8 (reasoning <think> + tool calling)
+# Chat template officiel unsloth pour Qwen3.6-35B-A3B (system/developer fusionnes,
+# preserve_thinking, reasoning <think> + tool calling)
 COPY unsloth.jinja /workspace/unsloth.jinja
