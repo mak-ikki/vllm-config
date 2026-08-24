@@ -27,7 +27,7 @@ services:
       - TOKENIZERS_PARALLELISM=false
 
     volumes:
-      - /home/mak/ai-models:/root/.cache/huggingface
+      - /home/mak/ai/models:/root/.cache/huggingface
       - vllm-logs:/var/log/vllm
 
     ports:
